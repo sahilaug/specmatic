@@ -1,25 +1,25 @@
 package run.qontract.core
 
-import org.assertj.core.api.Assertions
+import org.assertj.core.api.Assertions.assertThat
 import run.qontract.core.utilities.exceptionCauseMessage
-import run.qontract.stubShouldBreak
-import run.qontract.stubShouldNotBreak
 import run.qontract.testStub
 
 class TestHttpStub(private val stubRequest: HttpRequest, private val stubResponse: HttpResponse) {
     fun shouldWorkWith(contractGherkin: String) {
         val response = testStub(contractGherkin, stubRequest, stubResponse)
-        Assertions.assertThat(response).isEqualTo(stubResponse)
+        assertThat(response).`as`("Expected response:\n${stubResponse.toLogString()}\n\nActual response:\n${response.toLogString()}").isEqualTo(stubResponse)
     }
 
-    fun shouldBreakWith(contractGherkin: String) {
-        val response = try {
-            testStub(contractGherkin, stubRequest, stubResponse)
+    fun breaksWith(contractGherkin: String) =
+        try {
+            val response = testStub(contractGherkin, stubRequest, stubResponse)
+            if(response.status != 400) {
+                println("Expected status 400, instead got this response:\n${response.toLogString()}")
+            }
+
+            response.status == 400
         } catch(e: Throwable) {
             println(exceptionCauseMessage(e))
-            return
+            true
         }
-
-        Assertions.assertThat(response.status).isEqualTo(400)
-    }
 }
