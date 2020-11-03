@@ -120,7 +120,7 @@ Feature: User API
     }
 
     @Test
-    fun `changing the request payload type is not backward compatible`() {
+    fun `changing the request payload type from number to string is not backward compatible`() {
         val oldContract = """
 Feature: User API
   Scenario: Add user
