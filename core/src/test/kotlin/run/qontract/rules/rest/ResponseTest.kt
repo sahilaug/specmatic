@@ -118,6 +118,37 @@ Feature: User API
     }
 
     @Test
+    fun `making a optional json value's type non-optional in response body is not backward compatible`() {
+        val oldContract = """
+Feature: User API
+  Scenario: Add user
+    Given json User
+    | name | (string) |
+    And json Status
+    | status | (string?) |
+    When POST /user
+    And request-body (User)
+    Then status 200
+    And response-body (Status)
+""".trimIndent()
+
+        val newContract = """
+Feature: User API
+  Scenario: Add user
+    Given json User
+    | name | (string) |
+    And json Status
+    | status | (string) |
+    When POST /user
+    And request-body (User)
+    Then status 200
+    And response-body (Status)
+""".trimIndent()
+
+        newContract notBackwardCompatibleWith oldContract
+    }
+
+    @Test
     fun `change number in string to string in json value in response body is not backward compatible`() {
         val oldContract = """
 Feature: User API
@@ -183,7 +214,7 @@ Feature: User API
     Given json User
     | id | (string) |
     And json Status
-    | status | (string?) |
+    | status | (string) |
     When POST /user
     And request-body (User)
     Then status 200
@@ -196,7 +227,7 @@ Feature: User API
     Given json User
     | id | (string) |
     And json Status
-    | status | (string) |
+    | status? | (string) |
     When POST /user
     And request-body (User)
     Then status 200
