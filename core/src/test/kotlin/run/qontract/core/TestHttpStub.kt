@@ -14,7 +14,7 @@ class TestHttpStub(private val stubRequest: HttpRequest, private val stubRespons
         try {
             val response = testStub(contractGherkin, stubRequest, stubResponse)
             if(response.status != 400) {
-                println("Expected status 400, instead got this response:\n${response.toLogString()}")
+                println("Expected stub to break with status 400, instead got this response:\n${response.toLogString()}")
             }
 
             response.status == 400

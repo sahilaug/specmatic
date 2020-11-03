@@ -3,12 +3,14 @@ package run.qontract
 import org.assertj.core.api.Assertions.assertThat
 import run.qontract.core.*
 import run.qontract.core.pattern.AnyPattern
+import run.qontract.core.pattern.ContractException
 import run.qontract.core.pattern.DeferredPattern
 import run.qontract.core.pattern.Pattern
 import run.qontract.core.value.Value
 import run.qontract.mock.ScenarioStub
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import kotlin.test.fail
 
 fun optionalPattern(pattern: Pattern): AnyPattern = AnyPattern(listOf(DeferredPattern("(empty)"), pattern))
 
@@ -26,24 +28,30 @@ fun emptyPattern() = DeferredPattern("(empty)")
 
 infix fun String.backwardCompatibleWith(oldContractGherkin: String) {
     val results = testBackwardCompatibility(oldContractGherkin)
-    assertThat(results.success()).isTrue()
-    assertThat(results.failureCount).isZero()
+    assertThat(results.success()).`as`(results.report()).isTrue
+    assertThat(results.failureCount).`as`(results.report()).isZero
 
     stubsFrom(oldContractGherkin).workWith(this)
 }
 
 infix fun String.notBackwardCompatibleWith(oldContractGherkin: String) {
     val results = testBackwardCompatibility(oldContractGherkin)
-    assertThat(results.success()).`as`("Should not have been compatible").isFalse
-    assertThat(results.failureCount).`as`("Failure count should have been positive").isPositive
 
-    stubsFrom(oldContractGherkin).breakOn(this)
+    if(results.success())
+        fail("The newer contract was incorrectly considered compatible with the older contract.")
+
+    if(results.failureCount == 0)
+        fail("There should have been some compatibility failures, indicating compatibility mismatch.")
 }
 
 fun String.testBackwardCompatibility(oldContractGherkin: String): Results {
     val oldFeature = Feature(oldContractGherkin)
     val newFeature = Feature(this)
-    return testBackwardCompatibility(oldFeature, newFeature)
+    return try {
+        testBackwardCompatibility(oldFeature, newFeature)
+    } catch(e: ContractException) {
+        Results(listOf(e.failure()))
+    }
 }
 
 fun testStub(contractGherkin: String, stubRequest: HttpRequest, stubResponse: HttpResponse): HttpResponse {
@@ -78,9 +86,15 @@ private class TestHttpStubData(val oldContract: String, val stubs: List<TestHttp
             stub.shouldWorkWith(oldContract)
         }
 
-        assertThat(stubs.asSequence().map { stub ->
+        val results = stubs.asSequence().map { stub ->
             stub.breaksWith(newContract)
-        }.all { it }).isTrue
+        }
+
+        val breakageNotFound = results.none { it }
+
+        if(breakageNotFound) {
+            fail("Some stubs should have broken against the new contract, but none did.")
+        }
     }
 
     fun workWith(newContract: String) {

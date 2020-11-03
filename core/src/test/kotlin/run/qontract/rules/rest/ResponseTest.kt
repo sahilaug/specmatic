@@ -1,5 +1,6 @@
 package run.qontract.rules.rest
 
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import run.qontract.backwardCompatibleWith
 import run.qontract.notBackwardCompatibleWith
@@ -34,6 +35,38 @@ Feature: User API
     And json Status
     | status | (string) |
     | data  | (string) |
+    When POST /user
+    And request-body (User)
+    Then status 200
+    And response-body (Status)
+""".trimIndent()
+
+        newContract notBackwardCompatibleWith oldContract
+    }
+
+    @Test
+    fun `removing non-optional key to the response body is not backward compatible`() {
+        val oldContract = """
+Feature: User API
+  Scenario: Add user
+    Given json User
+    | name | (string) |
+    And json Status
+    | status | (string) |
+    | data  | (string) |
+    When POST /user
+    And request-body (User)
+    Then status 200
+    And response-body (Status)
+""".trimIndent()
+
+        val newContract = """
+Feature: User API
+  Scenario: Add user
+    Given json User
+    | name    | (string) |
+    And json Status
+    | status | (string) |
     When POST /user
     And request-body (User)
     Then status 200
@@ -116,7 +149,7 @@ Feature: User API
     }
 
     @Test
-    fun `change from string to number in string in response body is backward compatible`() {
+    fun `change from string to number in string in response body is not backward compatible`() {
         val oldContract = """
 Feature: User API
   Scenario: Add user
@@ -139,6 +172,69 @@ Feature: User API
     And response-body (number in string)
 """.trimIndent()
 
-        newContract backwardCompatibleWith oldContract
+        newContract notBackwardCompatibleWith oldContract
+    }
+
+    @Test
+    fun `changing a key from optional to non optional in the response body is not backward compatible`() {
+        val oldContract = """
+Feature: User API
+  Scenario: Add user
+    Given json User
+    | id | (string) |
+    And json Status
+    | status | (string?) |
+    When POST /user
+    And request-body (User)
+    Then status 200
+    And response-body (Status)
+        """.trimIndent()
+
+        val newContract = """
+Feature: User API
+  Scenario: Add user
+    Given json User
+    | id | (string) |
+    And json Status
+    | status | (string) |
+    When POST /user
+    And request-body (User)
+    Then status 200
+    And response-body (Status)
+        """.trimIndent()
+
+        newContract notBackwardCompatibleWith oldContract
+    }
+
+    @Test
+    fun `removing a non-optional key in the response body is not backward compatible`() {
+        val oldContract = """
+Feature: User API
+  Scenario: Add user
+    Given json User
+    | id   | (string)  |
+    And json Status
+    | status | (string) |
+    | data   | (string) |
+    When POST /user
+    And request-body (User)
+    Then status 200
+    And response-body (Status)
+        """.trimIndent()
+
+        val newContract = """
+Feature: User API
+  Scenario: Add user
+    Given json User
+    | id | (string) |
+    And json Status
+    | status | (string) |
+    When POST /user
+    And request-body (User)
+    Then status 200
+    And response-body (Status)
+        """.trimIndent()
+
+        newContract notBackwardCompatibleWith oldContract
     }
 }
