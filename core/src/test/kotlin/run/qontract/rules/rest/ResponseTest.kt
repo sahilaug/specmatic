@@ -1,6 +1,5 @@
 package run.qontract.rules.rest
 
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import run.qontract.backwardCompatibleWith
 import run.qontract.notBackwardCompatibleWith
@@ -27,6 +26,8 @@ Feature: User API
 
     @Test
     fun `adding non-optional key to the response body is not backward compatible`() {
+        // TODO: VALID, NOT PASSING, MAKE THIS PASS
+
         val newContract = """
 Feature: User API
   Scenario: Add user
@@ -119,6 +120,8 @@ Feature: User API
 
     @Test
     fun `making a optional json value's type non-optional in response body is not backward compatible`() {
+        // TODO: NOT PASSING, NOT BACKWARD COMPATIBLE, MAKE THIS PASS
+
         val oldContract = """
 Feature: User API
   Scenario: Add user
@@ -181,6 +184,8 @@ Feature: User API
 
     @Test
     fun `change from string to number in string in response body is not backward compatible`() {
+        // TODO: SHOULD BE BACKWARD COMPATIBLE
+
         val oldContract = """
 Feature: User API
   Scenario: Add user

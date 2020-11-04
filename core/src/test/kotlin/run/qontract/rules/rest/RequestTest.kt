@@ -1,5 +1,6 @@
 package run.qontract.rules.rest
 
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import run.qontract.backwardCompatibleWith
 import run.qontract.notBackwardCompatibleWith
@@ -119,8 +120,25 @@ Feature: User API
         newContract backwardCompatibleWith oldContract
     }
 
+    @Disabled
     @Test
     fun `changing the request payload type from number to string is backward compatible`() {
+        // TODO: GRAY AREA, needs further thought
+        // Issues:
+        // 1. Changing from number to string should not be an issue for provider unmarshallers,
+        //    and ideally should not matter to the consumer either, which continues to send a number,
+        //    which the provider now interprets as a string
+        // 2. But changing from string to number might be an issue for provider unmarshallers,
+        //    which are used to seeing a number and will break when trying to convert an alphanumeric string to
+        //    a number, if this change happens unexpectedly
+        // Possible approach to address this:
+        // 1. Consider the change backward incompatible, and let the proposer add a new scenario
+        //    with the new request body type.
+        // * This requires some work on Qontract.
+        //
+        // Related issues:
+        // 1. Changing from number to string in the body might not be support
+
         val oldContract = """
 Feature: User API
   Scenario: Add user
@@ -147,7 +165,7 @@ Feature: User API
     }
 
     @Test
-    fun `change number in string to string in request body is backward compatible`() {
+    fun `change number in string to string in request body JSON is backward compatible`() {
         val oldContract = """
 Feature: User API
   Scenario: Add user
@@ -178,7 +196,11 @@ Feature: User API
     }
 
     @Test
-    fun `change from string to number in string in request body is not backward compatible`() {
+    fun `change from string to number in string in request body is backward compatible`() {
+        // TODO MAKE THIS PASS
+        // Consumer will not have to change, provider is anyway expecting a string.
+        // Changing from string to number in string will not require either to change.
+
         val oldContract = """
 Feature: User API
   Scenario: Add user
@@ -205,7 +227,7 @@ Feature: User API
     And response-body (Status)
 """.trimIndent()
 
-        newContract notBackwardCompatibleWith oldContract
+        newContract backwardCompatibleWith oldContract
     }
 
     @Test

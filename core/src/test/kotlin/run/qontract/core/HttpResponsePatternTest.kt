@@ -25,14 +25,21 @@ internal class HttpResponsePatternTest {
     @Test
     fun `it should encompass itself`() {
         val httpResponsePattern = HttpResponsePattern(status = 200, headersPattern = HttpHeadersPattern(mapOf("X-Optional?" to StringPattern)))
-        assertThat(httpResponsePattern.encompasses(httpResponsePattern, Resolver(), Resolver())).isInstanceOf(Result.Success::class.java)
+        httpResponsePattern shouldEncompass httpResponsePattern
     }
 
     @Test
     fun `it should encompass another smaller response pattern`() {
         val bigger = HttpResponsePattern(status = 200, headersPattern = HttpHeadersPattern(mapOf("X-Required" to StringPattern)), body = toTabularPattern(mapOf("data" to AnyPattern(listOf(StringPattern, NullPattern)))))
         val smaller = HttpResponsePattern(status = 200, headersPattern = HttpHeadersPattern(mapOf("X-Required" to StringPattern, "X-Extra" to StringPattern)), body = toTabularPattern(mapOf("data" to StringPattern)))
-        assertThat(bigger.encompasses(smaller, Resolver(), Resolver())).isInstanceOf(Result.Success::class.java)
+        bigger shouldEncompass smaller
+    }
+
+    @Test
+    fun `it should not encompass another response pattern with an extra key in the response payload`() {
+        val smaller = HttpResponsePattern(status = 200, body = toTabularPattern(mapOf("data" to StringPattern)))
+        val bigger = HttpResponsePattern(status = 200, body = toTabularPattern(mapOf("data" to StringPattern, "unexpected" to StringPattern)))
+        smaller shouldNotEncompass bigger
     }
 
     @Test
@@ -42,4 +49,14 @@ internal class HttpResponsePatternTest {
 
         assertThat(pattern.matches(response, Resolver())).isInstanceOf(Result.Failure::class.java)
     }
+}
+
+private infix fun HttpResponsePattern.shouldNotEncompass(second: HttpResponsePattern) {
+    val result = this.encompasses(second, Resolver(), Resolver())
+    assertThat(result).`as`("Second response pattern should not have been backward compatible with the first").isInstanceOf(Result.Failure::class.java)
+}
+
+private infix fun HttpResponsePattern.shouldEncompass(second: HttpResponsePattern) {
+    val result = this.encompasses(second, Resolver(), Resolver())
+    assertThat(result).`as`(resultReport(result)).isInstanceOf(Result.Success::class.java)
 }
