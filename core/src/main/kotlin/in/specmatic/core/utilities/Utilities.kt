@@ -47,6 +47,7 @@ fun messageStringFrom(e: Throwable): String {
 }
 
 fun exceptionCauseMessage(e: Throwable): String {
+    println(e.stackTraceToString())
     return when(e) {
         is ContractException -> e.report()
         else -> messageStringFrom(e).ifEmpty {
